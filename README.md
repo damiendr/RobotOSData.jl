@@ -1,7 +1,36 @@
 # ROSData
 
-[![Build Status](https://travis-ci.org/damiendr/ROSData.jl.svg?branch=master)](https://travis-ci.org/damiendr/ROSData.jl)
+[![Build Status](https://travis-ci.org/damiendr/ROSData.jl.svg?branch=master)](https://travis-ci.org/damiendr/ROSData.jl) [![codecov.io](http://codecov.io/github/damiendr/ROSData.jl/coverage.svg?branch=master)](http://codecov.io/github/damiendr/ROSData.jl?branch=master)
 
-[![Coverage Status](https://coveralls.io/repos/damiendr/ROSData.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/damiendr/ROSData.jl?branch=master)
+A collection of tools to read data from [ROS bags](http://wiki.ros.org/Bags/) and [messages](http://wiki.ros.org/Messages) in Julia.
 
-[![codecov.io](http://codecov.io/github/damiendr/ROSData.jl/coverage.svg?branch=master)](http://codecov.io/github/damiendr/ROSData.jl?branch=master)
+This package has no dependencies on the ROS codebase: you can use it without a working ROS install.
+
+Only ROS bags v2.0 are supported at the moment.
+
+## Usage
+
+First define the topic we're interested in and what to do with the raw messages:
+```julia
+sub = Subscription("/davis/left/events") do io
+    # Read the standard message Header:
+    header = read(io, ROSData.Header)
+    # Read some values:
+    value = ltoh(read(io, UInt32))
+    array = read_array(io, Float32)
+    text = read_string(io, Float32)
+    ... do something with these values
+end
+```
+
+Now open the bag and process the subscription:
+```julia
+open("indoor_flying1_data.bag") do io
+    read(io, sub)
+end
+```
+
+At the moment you can only process one subscription at a time, but this restriction could be lifted in the future.
+
+Note: to read an array of a custom type, define: `Base.read(io::IO, ::Type{MyType}) = ...`. Remember that ROS bags are little-endian, so liberal use of `ltoh()` is needed to ensure that your code will work on a big-endian host.
+

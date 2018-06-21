@@ -30,7 +30,7 @@ open("indoor_flying1_data.bag") do io
 end
 ```
 
-At the moment you can only process one subscription at a time, but this restriction could be lifted in the future.
+At the moment the library can only process one topic at a time, but this restriction could be lifted in the future.
 
 Note: to read an array of a custom type, define: `Base.read(io::IO, ::Type{MyType}) = ...`
 

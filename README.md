@@ -18,7 +18,7 @@ sub = Subscription("/davis/left/events") do io
     # Read some values:
     value = ltoh(read(io, UInt32))
     array = read_array(io, Float32)
-    text = read_string(io, Float32)
+    text = read_string(io)
     ... do something with these values
 end
 ```
@@ -32,5 +32,7 @@ end
 
 At the moment you can only process one subscription at a time, but this restriction could be lifted in the future.
 
-Note: to read an array of a custom type, define: `Base.read(io::IO, ::Type{MyType}) = ...`. Remember that ROS bags are little-endian, so liberal use of `ltoh()` is needed to ensure that your code will work on a big-endian host.
+Note: to read an array of a custom type, define: `Base.read(io::IO, ::Type{MyType}) = ...`
+
+Remember that ROS bags are little-endian, so liberal use of `ltoh()` is needed to ensure that your code will work on a big-endian host.
 

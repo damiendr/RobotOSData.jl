@@ -111,6 +111,33 @@ function parse_record_header(header::Vector{UInt8})
     fields
 end
 
+""" Creates an IO stream from the record's data """
+decode(header, data) = IOBuffer(data)
+decode(header::Chunk{:bz2}, data) = Bzip2DecompressorStream(IOBuffer(data))
+
+
+""" A subscription to a topic. """
+mutable struct Subscription{F<:Function}
+    topic::String   # topic name eg. /data/events
+    conn::Int32     # connection ID, once known
+    on_msg::F       # callback to process messages
+end
+
+""" Subscribe to the given topic, processing each message with `f(io)`. """
+Subscription(f::Function, topic::String) = Subscription(topic, Int32(-1), f)
+
+""" Reads a bag and dispatches messages that match the requested topic. """
+read_topic(bag::Bag, sub::Subscription) = read(bag.io, sub)
+
+# Read a stream of raw records:
+function Base.read(io::IO, sub::Subscription)
+    while !eof(io)
+        rec = read(io, RawRecord)
+        parse_record!(rec, sub)
+    end
+end
+
+""" Parses a raw record and dispatches it according to its type. """
 function parse_record!(rec::RawRecord, dest)
     fields = parse_record_header(rec.header)
     op = fields[:op][1]
@@ -122,39 +149,23 @@ function parse_record!(rec::RawRecord, dest)
     end
 end
 
-decode(header, data) = IOBuffer(data)
-decode(header::Chunk{:bz2}, data) = Bzip2DecompressorStream(IOBuffer(data))
-
-mutable struct Subscription{F<:Function}
-    topic::String
-    conn::Int32
-    on_msg::F
-end
-Subscription(f::Function, topic::String) = Subscription(topic, Int32(-1), f)
-
-
-read_topic(bag::Bag, sub::Subscription) = read(bag.io, sub)
-
-function Base.read(io::IO, sub::Subscription)
-    while !eof(io)
-        rec = read(io, RawRecord)
-        parse_record!(rec, sub)
-    end
-end
-
+# Ignore records we don't know how to handle:
 read_record!(header, data, sub::Subscription) = nothing
 
+# Recurse into Chunks:
 function read_record!(header::Chunk, data, sub::Subscription)
     io = decode(header, data)
     read(io, sub)
 end
 
+# Get a connection ID for our topic:
 function read_record!(header::Connection, data, sub::Subscription)
     if header.topic == sub.topic
         sub.conn = header.conn
     end
 end
 
+# Decode messages that match our topic:
 function read_record!(header::MessageData, data, sub::Subscription)
     if header.conn == sub.conn
         sub.on_msg(decode(header, data))

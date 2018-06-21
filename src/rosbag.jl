@@ -15,7 +15,7 @@ function Bag(io::IO)
     head_match = match(HEADER_RE, head_str)
     if head_match != nothing
         # Found a header. Let's parse the version
-        # number and any subsequent header lines:
+        # number:
         X = parse(head_match.captures[1])::Int
         Y = parse(head_match.captures[2])::Int
         return Bag{X,Y,typeof(io)}(io)
@@ -131,6 +131,9 @@ mutable struct Subscription{F<:Function}
     on_msg::F
 end
 Subscription(f::Function, topic::String) = Subscription(topic, Int32(-1), f)
+
+
+read_topic(bag::Bag, sub::Subscription) = read(bag.io, sub)
 
 function Base.read(io::IO, sub::Subscription)
     while !eof(io)

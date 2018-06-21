@@ -26,7 +26,8 @@ end
 Now open the bag and process the subscription:
 ```julia
 open("indoor_flying1_data.bag") do io
-    read(io, sub)
+    bag = Bag(io)
+    read_topic(bag, sub)
 end
 ```
 

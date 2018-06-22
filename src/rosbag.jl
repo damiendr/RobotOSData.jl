@@ -5,8 +5,6 @@ struct Bag{X,Y,I<:IO}
     io::I
 end
 
-export Bag
-
 const HEADER_RE = r"#ROSBAG V(\d)\.(\d)\n"
 const HEADER_BYTES = 13
 
@@ -14,8 +12,7 @@ function Bag(io::IO)
     head_str = convert(String, read(io, HEADER_BYTES))
     head_match = match(HEADER_RE, head_str)
     if head_match != nothing
-        # Found a header. Let's parse the version
-        # number:
+        # Found a header. Let's parse the version:
         X = parse(head_match.captures[1])::Int
         Y = parse(head_match.captures[2])::Int
         return Bag{X,Y,typeof(io)}(io)
@@ -101,10 +98,10 @@ function parse_record_header(header::Vector{UInt8})
     fields = Dict{Symbol,Vector{UInt8}}()
     io = IOBuffer(header)
     while !eof(io)
-        field_len = ltoh(read(io, UInt32))
+        field_len = Int(ltoh(read(io, UInt32)))
         field_name = readuntil(io, "=")
         value_len = field_len - length(field_name)
-        @assert value_len > 0
+        @assert value_len >= 0
         field_value = read(io, value_len)
         fields[Symbol(field_name[1:end-1])] = field_value
     end
@@ -117,23 +114,32 @@ decode(header::Chunk{:bz2}, data) = Bzip2DecompressorStream(IOBuffer(data))
 
 
 """ A subscription to a topic. """
-mutable struct Subscription{F<:Function}
+struct Subscription{F<:Function}
     topic::String   # topic name eg. /data/events
-    conn::Int32     # connection ID, once known
     on_msg::F       # callback to process messages
 end
 
 """ Subscribe to the given topic, processing each message with `f(io)`. """
-Subscription(f::Function, topic::String) = Subscription(topic, Int32(-1), f)
+Subscription(f::Function, topic::String) = Subscription(topic, f)
 
-""" Reads a bag and dispatches messages that match the requested topic. """
-read_topic(bag::Bag, sub::Subscription) = read(bag.io, sub)
+
+""" Active subscriptions and their channel IDs """
+struct SubscriptionMap{T<:Tuple}
+    subs::T
+    chans::Dict{Int32,Int}
+end
+SubscriptionMap(subs) = SubscriptionMap(subs,Dict{Int32,Int}())
+
+
+""" Reads a bag and dispatches messages that match the requested topics. """
+read_topics(bag::Bag, subs::Vararg{Subscription}) = read(bag.io, SubscriptionMap(subs))
+
 
 # Read a stream of raw records:
-function Base.read(io::IO, sub::Subscription)
+function Base.read(io::IO, subs::SubscriptionMap)
     while !eof(io)
         rec = read(io, RawRecord)
-        parse_record!(rec, sub)
+        parse_record!(rec, subs)
     end
 end
 
@@ -147,28 +153,32 @@ function parse_record!(rec::RawRecord, dest)
     elseif op == 0x02 read_record!(MessageData(fields), rec.data, dest)
     elseif op == 0x04 read_record!(IndexData(fields), rec.data, dest)
     end
+    nothing
 end
 
 # Ignore records we don't know how to handle:
-read_record!(header, data, sub::Subscription) = nothing
+read_record!(header, data, dest) = nothing
 
 # Recurse into Chunks:
-function read_record!(header::Chunk, data, sub::Subscription)
+function read_record!(header::Chunk, data, dest::SubscriptionMap)
     io = decode(header, data)
-    read(io, sub)
+    read(io, dest)
 end
 
-# Get a connection ID for our topic:
-function read_record!(header::Connection, data, sub::Subscription)
-    if header.topic == sub.topic
-        sub.conn = header.conn
+# Get a connection ID for a topic:
+function read_record!(header::Connection, data, dest::SubscriptionMap)
+    for (i, sub) in enumerate(dest.subs)
+        if header.topic == sub.topic
+            dest.chans[header.conn] = i
+        end
     end
 end
 
-# Decode messages that match our topic:
-function read_record!(header::MessageData, data, sub::Subscription)
-    if header.conn == sub.conn
-        sub.on_msg(decode(header, data))
+# Decode messages that match one of our topics:
+function read_record!(header::MessageData, data, dest::SubscriptionMap)
+    sub_id = get(dest.chans, header.conn, -1)
+    if sub_id != -1
+        dest.subs[sub_id].on_msg(decode(header, data))
     end
 end
 

@@ -27,13 +27,11 @@ Now open the bag and process the subscription:
 ```julia
 open("indoor_flying1_data.bag") do io
     bag = Bag(io)
-    read_topic(bag, sub)
+    read_topics(bag, sub)
 end
 ```
 
-At the moment the library can only process one topic at a time, but this restriction could be lifted in the future.
+To process multiple topics at once, pass more than one subscription object: `read_topics(bag, sub1, sub2, ...)`.
 
-Note: to read an array of a custom type, define: `Base.read(io::IO, ::Type{MyType}) = ...`
-
-Remember that ROS bags are little-endian, so liberal use of `ltoh()` is needed to ensure that your code will work on a big-endian host.
+To read custom message types and arrays thereof, define: `Base.read(io::IO, ::Type{MyType}) = ...`. Remember that ROS bags are little-endian, so liberal use of `ltoh()` is needed to ensure that your code will work on a big-endian host.
 

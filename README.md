@@ -53,7 +53,7 @@ Dict{String,Array{T,1} where T} with 9 entries:
 ```
 
 You can also read only some of the messages, which is faster than reading the whole file:
-```
+```julia
 >>> @time bag[1:10] # read chunks 1 to 10
   0.016518 seconds (56.23 k allocations: 11.630 MiB)
 >>> @time bag["/davis/right/imu"]
@@ -104,5 +104,6 @@ end
 RobotOSData provides a tool that lets you generate modules like the one above from the `.msg` files in a ROS package. To keep things simple, this tool does not try to resolve the dependencies between packages — it is up to you to indicate them. It will, however, handle dependencies between message files in the same package.
 
 ```julia
-RobotOSData.gen_module(:ExtraMessages, ["path/to/my_ros_pkg"], "path/to/dest/dir", :(RobotOSData.StdMsgs), :(RobotOSData.CommonMsgs))
+RobotOSData.gen_module(:ExtraMessages, ["path/to/my_ros_pkg"], "path/to/dest/dir",
+    :(RobotOSData.StdMsgs), :(RobotOSData.CommonMsgs))
 ```

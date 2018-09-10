@@ -8,7 +8,7 @@ This package has no dependencies on the ROS codebase: you can use it without a w
 
 Only ROS bags v2.0 are supported at the moment. If you'd like support for earlier versions, do open an issue and submit a sample bag file or a pull request (I have been unable to find any older bags in the wild).
 
-Reading from uncompressed bags is pretty fast (600 MB/s on my laptop). Bags with BZip2 compression are supported, but reading these is currently about two orders of magnitude slower; this seems to be an issue with `libbzip2` itself.
+Reading from uncompressed bags is pretty fast (up to 500 MB/s on my laptop). Bags with BZip2 compression are supported, but reading these is about two orders of magnitude slower; this seems to be due to `libbzip2` itself.
 
 ## Basic Usage
 
@@ -37,11 +37,31 @@ Note how the standard ROS messages are resolved to a Julia type, while topics wi
 
 To read the message data, use one of the following:
 ```julia
-using RobotOSData
-bag[:] # read all messages
-bag[1:4] # read chunks 1 to 4
-bag["/davis/right/imu"]
-bag[ROSTime("2017-09-05T20:59:40"):ROSTime("2017-09-05T21:00:00")]
+>>> using RobotOSData
+>>> @time bag[:] # read all messages
+  2.655052 seconds (6.83 M allocations: 1.556 GiB, 8.31% gc time)
+Dict{String,Array{T,1} where T} with 9 entries:
+  "/davis/right/imu"         => MessageData{RobotOSData.CommonMsgs.sensor_msgs.…
+  "/davis/right/camera_info" => MessageData{RobotOSData.CommonMsgs.sensor_msgs.…
+  "/davis/right/image_raw"   => MessageData{RobotOSData.CommonMsgs.sensor_msgs.…
+  "/davis/left/camera_info"  => MessageData{RobotOSData.CommonMsgs.sensor_msgs.…
+  "/davis/right/events"      => MessageData{Array{UInt8,1}}[MessageData{Array{U…
+  "/davis/left/image_raw"    => MessageData{RobotOSData.CommonMsgs.sensor_msgs.…
+  "/davis/left/imu"          => MessageData{RobotOSData.CommonMsgs.sensor_msgs.…
+  "/velodyne_point_cloud"    => MessageData{RobotOSData.CommonMsgs.sensor_msgs.…
+  "/davis/left/events"       => MessageData{Array{UInt8,1}}[MessageData{Array{U…
+```
+
+You can also read only some of the messages, which is faster than reading the whole file:
+```
+>>> @time bag[1:10] # read chunks 1 to 10
+  0.016518 seconds (56.23 k allocations: 11.630 MiB)
+>>> @time bag["/davis/right/imu"]
+  0.707286 seconds (3.60 M allocations: 244.969 MiB)
+>>> @time bag[ROSTime("2017-09-05T20:59:40"):ROSTime("2017-09-05T20:59:50")]
+  0.317334 seconds (743.59 k allocations: 231.204 MiB)
+>>> @time bag["/davis/left/image_raw", ROSTime("2017-09-05T20:59:40"):ROSTime("2017-09-05T20:59:50")]
+  0.100355 seconds (323.90 k allocations: 51.066 MiB)
 ```
 
 ## Message Types

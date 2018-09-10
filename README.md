@@ -1,6 +1,6 @@
 # RobotOSData
 
-[![Build Status](https://travis-ci.org/damiendr/RobotOSData.jl.svg?branch=master)](https://travis-ci.org/damiendr/RobotOSData.jl) [![codecov.io](http://codecov.io/github/damiendr/RobotOSData.jl/coverage.svg?branch=master)](http://codecov.io/github/damiendr/RobotOSData.jl?branch=master)
+*Work in progress: you can use this package by installing it directly from this git repository, but it is not registered yet*
 
 A library to read data from [ROS bags](http://wiki.ros.org/Bags/) and [messages](http://wiki.ros.org/Messages) in Julia.
 

@@ -86,7 +86,6 @@ module ExtraMessages
         using RobotOSData.Messages # imports Readable, Header
         using RobotOSData.StdMsgs
         using RobotOSData.CommonMsgs # for sensor_msgs
-        using OtherMessages # imports another_pkg
         struct NewMsgType <: Readable
             header::Header
             imu::sensor_msgs.Imu

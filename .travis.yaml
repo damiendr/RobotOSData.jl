@@ -4,8 +4,10 @@ os:
   - osx
 julia:
   - 0.7
-  - 1.0
   - nightly
+branches:
+  only:
+    - master
 notifications:
   email: false
 after_success:

@@ -2,6 +2,11 @@
 
 *Work in progress: you can use this package by installing it directly from this git repository, but it is not registered yet*
 
+
+[![Build Status](https://travis-ci.org/damiendr/RobotOSData.jl.svg?branch=master)](https://travis-ci.org/damiendr/RobotOSData.jl)
+[![Coverage Status](https://coveralls.io/repos/damiendr/RobotOSData.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/damiendr/RobotOSData.jl?branch=master)
+
+
 A library to read data from [ROS bags](http://wiki.ros.org/Bags/) and [messages](http://wiki.ros.org/Messages) in Julia.
 
 This package has no dependencies on the ROS codebase: you can use it without a working ROS install.

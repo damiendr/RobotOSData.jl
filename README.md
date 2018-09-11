@@ -99,13 +99,10 @@ module ExtraMessages
             header::Header
             imu::sensor_msgs.Imu
         end
-        # Readable already handles the parsing for you.        
-        # You could also write your own parser:
-        #    read(io::IO, ::Type{NewMsgType})
-        # Have a look at the read_field() methods.
     end
 end
 ```
+The parser will call `read(io, NewMsgType)` to deserialize the new type. `Readable` already provides a generic implementation of `read` that should be adequate in most cases. But you could also write your own `read(io::IO, ::Type{NewMsgType})`. Have a look at the `read_field()` methods [here](https://github.com/damiendr/RobotOSData.jl/blob/master/src/messages.jl).
 
 ### Auto-generating message types
 

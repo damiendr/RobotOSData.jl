@@ -57,9 +57,9 @@ version = "0.0.2"
 
 [[FileIO]]
 deps = ["Pkg", "Random", "Test"]
-path = "/Users/plantagenet/.julia/dev/FileIO"
+git-tree-sha1 = "b80161b7e679a1241f9441ebfa60b62d4239cf99"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.0.1+"
+version = "1.0.1"
 
 [[HTTPClient]]
 deps = ["Compat", "LibCURL"]

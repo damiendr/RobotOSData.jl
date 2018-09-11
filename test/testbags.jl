@@ -14,3 +14,6 @@ bag = load("data/convergent_gen1.bag", TestTypes)
 msgs = bag["convergent"]
 @assert msgs isa Vector{MessageData{TestTypes.test_rosbag.Convergent}}
 
+# TODO:
+# - test message filters
+# - test for message content

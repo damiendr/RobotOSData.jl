@@ -217,6 +217,7 @@ select(filter::ConnectionFilter, _) = true
 
 select(filter::ROSTimespan, infos::ChunkInfo) =
     infos.start_time <= filter.end_time && infos.end_time >= filter.start_time
+select(filter::ROSTimespan, msg::MessageData) = msg.time in filter
 select(filter::ROSTimespan, _) = true
 
 make_filter(bag, ts::ROSTimespan) = ts

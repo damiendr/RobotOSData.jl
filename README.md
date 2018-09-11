@@ -71,7 +71,7 @@ You can also read only some of the messages, which is faster than reading the wh
   0.317334 seconds (743.59 k allocations: 231.204 MiB)
 # combine a specific topic and time span:
 >>> @time bag["/davis/left/image_raw", ROSTime("2017-09-05T20:59:40"):ROSTime("2017-09-05T20:59:50")]
-  0.100355 seconds (323.90 k allocations: 51.066 MiB)
+  0.116424 seconds (323.86 k allocations: 50.807 MiB)
 ```
 
 ## Message Types

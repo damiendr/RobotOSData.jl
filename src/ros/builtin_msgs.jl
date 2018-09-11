@@ -6,7 +6,18 @@ struct ROSTime <: Readable
     nsecs::UInt32
 end
 ROSTime(d::DateTime) = convert(ROSTime, d)
-ROSTime(s::String) = begin
+ROSTime(s::String) = convert(ROSTime, s)
+
+Base.convert(::Type{UInt64},   t::ROSTime) = UInt64(t.secs) << 32 + t.nsecs
+Base.convert(::Type{DateTime}, t::ROSTime) = unix2datetime(t.secs) + Nanosecond(t.nsecs)
+# Note: converting ROSTime to DateTime will truncate to millisecond precision
+
+function Base.convert(::Type{ROSTime},  d::DateTime)
+    ms = round(Int64, datetime2unix(d) * 1000)
+    ROSTime(ms ÷ 1000, (ms % 1000) * 1000000)
+end
+
+function Base.convert(::Type{ROSTime}, s::String)
     # We could just call ROSTime(DateTime(s)), but
     # let's be extra nice and parse nanoseconds.
     point = findlast(".", s)
@@ -19,13 +30,6 @@ ROSTime(s::String) = begin
         secs = datetime2unix(DateTime(s))
     end
     ROSTime(trunc(UInt32, secs), trunc(UInt32, nsecs))
-end
-Base.convert(::Type{UInt64},   t::ROSTime) = UInt64(t.secs) << 32 + t.nsecs
-Base.convert(::Type{DateTime}, t::ROSTime) = unix2datetime(t.secs) + Nanosecond(t.nsecs)
-# Note: converting ROSTime to DateTime will truncate to millisecond precision
-Base.convert(::Type{ROSTime},  d::DateTime) = begin
-    ms = round(Int64, datetime2unix(d) * 1000)
-    ROSTime(ms ÷ 1000, (ms % 1000) * 1000000)
 end
 
 Base.isequal(t1::ROSTime, t2::ROSTime) = convert(UInt64, t1) == convert(UInt64, t2)
@@ -58,7 +62,7 @@ struct ROSTimespan
     end_time::ROSTime
 end
 (::Colon)(t1::ROSTime, t2::ROSTime) = ROSTimespan(t1, t2)
-Base.in(t, span::ROSTimespan) = t.start_time <= ROSTime(t) <= t.end_time
+Base.in(t, span::ROSTimespan) = span.start_time <= convert(ROSTime, t) <= span.end_time
 
 
 struct Header <: Readable

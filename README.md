@@ -11,14 +11,15 @@ A library to read data from [ROS bags](http://wiki.ros.org/Bags/) and [messages]
 
 This package has no dependencies on the ROS codebase: you can use it without a working ROS install.
 
-Only ROS bags v2.0 are supported at the moment. If you'd like support for earlier versions, do open an issue and submit a sample bag file or a pull request (I have been unable to find any older bags in the wild).
+Only ROS bags v2.0 are supported at the moment. If you'd like support for earlier versions, do open an issue or submit a pull request.
 
-Reading from uncompressed bags is pretty fast (up to 500 MB/s on my laptop). Bags with BZip2 compression are supported, but reading these is about two orders of magnitude slower; this seems to be due to `libbzip2` itself.
+Reading from uncompressed bags is pretty fast (up to 500 MB/s on my laptop). Bags with BZip2 compression are supported, but reading these is about two orders of magnitude slower. Profiling shows that most of that time is spent in `libbzip2` itself, so there is probably not much that can be done to make it faster.
 
 ## Basic Usage
 
 Load a bag file through FileIO:
 ```julia
+using RobotOSData
 using FileIO
 bag = load("indoor_flying1_data.bag")
 ```
@@ -38,9 +39,9 @@ ROS Bag v2.0 at indoor_flying1_data.bag
  └─/davis/right/camera_info: sensor_msgs/CameraInfo => RobotOSData.CommonMsgs.sensor_msgs.CameraInfo
  └─/davis/right/image_raw:        sensor_msgs/Image => RobotOSData.CommonMsgs.sensor_msgs.Image
 ```
-Note how the standard ROS messages are resolved to a Julia type, while topics with the non-standard type "dvs_msgs/EventArray" will be parsed as raw `Array{UInt8,1}`. See below to add support non-standard types.
+Note how the standard ROS messages are resolved to a Julia type, while topics with the non-standard type "dvs_msgs/EventArray" will be parsed as raw `Array{UInt8,1}`. See below to add support for non-standard types.
 
-To read the message data, use one of the following:
+You can now read the messages in the bag:
 ```julia
 >>> using RobotOSData
 >>> @time bag[:] # read all messages
@@ -59,12 +60,16 @@ Dict{String,Array{T,1} where T} with 9 entries:
 
 You can also read only some of the messages, which is faster than reading the whole file:
 ```julia
->>> @time bag[1:10] # read chunks 1 to 10
+# read chunks 1 to 10:
+>>> @time bag[1:10]
   0.016518 seconds (56.23 k allocations: 11.630 MiB)
+# read a specific topic:
 >>> @time bag["/davis/right/imu"]
   0.707286 seconds (3.60 M allocations: 244.969 MiB)
+# read a time span:
 >>> @time bag[ROSTime("2017-09-05T20:59:40"):ROSTime("2017-09-05T20:59:50")]
   0.317334 seconds (743.59 k allocations: 231.204 MiB)
+# combine a specific topic and time span:
 >>> @time bag["/davis/left/image_raw", ROSTime("2017-09-05T20:59:40"):ROSTime("2017-09-05T20:59:50")]
   0.100355 seconds (323.90 k allocations: 51.066 MiB)
 ```
@@ -77,10 +82,9 @@ bag = load("indoor_flying1_data.bag"; std_types=[])
 ```
 In the absence of a suitable parser, the message data will be read as raw bytes.
 
-## Writing new message types
+### Writing new message types
 
 If you want to support a new message type, for instance `my_ros_pkg/NewMsgType`, you can do so as follows:
-
 ```julia
 bag = load("recording.bag", ExtraMessages)
 ```
@@ -103,7 +107,7 @@ module ExtraMessages
 end
 ```
 
-## Auto-generating message types
+### Auto-generating message types
 
 RobotOSData provides a tool that lets you generate modules like the one above from the `.msg` files in a ROS package. To keep things simple, this tool does not try to resolve the dependencies between packages — it is up to you to indicate them. It will, however, handle dependencies between message files in the same package.
 

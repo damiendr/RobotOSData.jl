@@ -18,7 +18,7 @@ include("records.jl")
 include("bag.jl")
 include("gen_msgs.jl")
 
-export ROSTime, MessageData
+export ROSTime, ROSDuration, MessageData
 
 
 end # module

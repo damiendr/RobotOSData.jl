@@ -46,7 +46,7 @@ end
 
 struct Raw <: Record
     header::Dict{Symbol,Vector{UInt8}}
-    data_len::UInt32
+    data::Vector{UInt8}
 end
 Raw(header, io::IO, data_len) = Raw(header, read(io, data_len))
 

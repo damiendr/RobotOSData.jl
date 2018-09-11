@@ -6,3 +6,4 @@ else
 end
 
 include("testmsgs.jl")
+include("testbags.jl")

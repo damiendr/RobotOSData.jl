@@ -20,6 +20,7 @@ ChunkedBag(X, Y, file, header) = ChunkedBag{X,Y,typeof(file)}(file, header, [], 
 
 Base.length(bag::ChunkedBag) = length(bag.chunks)
 
+index!(bag::ChunkedBag, io::IO, rec::Record) = nothing
 index!(bag::ChunkedBag, io::IO, rec::IndexData) = push!(bag.indices, rec)
 index!(bag::ChunkedBag, io::IO, rec::ChunkInfo) = push!(bag.chunkinfos, rec)
 index!(bag::ChunkedBag, io::IO, rec::Connection) = push!(bag.connections, rec)
@@ -115,7 +116,7 @@ function Base.show(io::IO, bag::ChunkedBag{X,Y}) where {X,Y}
         print(io, row[3])
         print(io, lpad("", pad))
         print(io, row[4])
-        print(io,row[5])
+        print(io, row[5])
         if row[6]==Vector{UInt8}
             printstyled(io, row[6], color=:red)
         else

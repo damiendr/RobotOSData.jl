@@ -1,6 +1,7 @@
 
 using FastIOBuffers: FastReadBuffer
 using DataStructures: counter
+using RobotOS
 
 """ A ROS Bag version X.Y """
 abstract type Bag{X,Y} end
@@ -29,27 +30,79 @@ index!(bag::ChunkedBag, io::IO, rec::Chunk) = begin
     skip(io, rec.data_len)
 end
 
+function _attempt_lookup(pkgstr, typstr, msg_types)
+    pkg, typ = Symbol(pkgstr), Symbol(typstr)
+    for type_mod in msg_types
+        return try
+            package = getproperty(type_mod, pkg)
+            getproperty(package, typ)
+        catch
+            continue
+        end
+    end
+    nothing
+end
+
 function setup_maps!(bag::ChunkedBag, msg_types...)
+    # we only want to call rostypegen() from RobotOS once...so keep
+    # track of the types we didn't find in "missing"
+    missing = Dict()
     for conn in bag.connections
         # (a) map connection id -> topic
         bag.topic_map[conn.conn] = conn.topic
 
         # (b) map connection id -> message type
         type_str = conn.header[:type] # eg. "sensor_msgs/Imu"
-        pkg, typ = Symbol.(split(type_str, "/"))
+        pkgstr, typstr = string.(split(type_str, '/'))
+
         # Do we have a module that implements this message type?
         # Look for eg. type_mod.sensor_msgs.Imu
-        for type_mod in msg_types
-            dtype = try
-                package = getproperty(type_mod, pkg)
-                getproperty(package, typ)
-            catch
-                continue
-            end
+        dtype = _attempt_lookup(pkgstr, typstr, msg_types)
+        if dtype != nothing
             bag.type_map[conn.conn] = dtype # found it
-            break
+        else
+            # mark it for RobotOS to generate
+            missing[conn.conn] = (pkgstr, typstr)
         end
     end
+
+    # try to find the missing types and mark them in
+    # "found" if successful. Fails if the message definition
+    # isn't found in PYTHONPATH.
+    found = Dict()
+    for conn in keys(missing)
+        try
+            pkgstr, typstr = missing[conn]
+            RobotOS._rosimport(pkgstr, true, typstr)
+            found[conn] = missing[conn]
+        catch
+            continue
+        end
+    end
+
+    # at this point
+    # 1) the type was not in "msg_types"
+    # 2) "found" contains all the types that
+    #    RobotOS can generate, so generate them.
+    rostypegen(@__MODULE__) # causes reimport warnings, how to just build a single type?
+    for conn in keys(found)
+        try
+            pkgstr, typstr = found[conn]
+            # "found" may contain duplicate type that were generated
+            # in this loop, so first we see if the type exists,
+            # otherwise import it
+            mod = try
+                eval(Meta.parse("$pkgstr.msg.$typstr"))
+            catch
+                eval(Meta.parse("import .$pkgstr.msg"))
+                eval(Meta.parse("$pkgstr.msg.$typstr"))
+            end
+            bag.type_map[conn] = mod
+        catch
+            continue
+        end
+    end
+    bag
 end
 
 """ FileIO loader """

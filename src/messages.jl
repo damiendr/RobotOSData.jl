@@ -1,8 +1,10 @@
-
+__precompile__(false)
 module Messages
 
 using StaticArrays: SVector
 using FastIOBuffers: FastReadBuffer
+
+using RobotOS
 
 
 """
@@ -10,8 +12,11 @@ Marks compound types that can be deserialised from a ROS datastream.
 All fields must be Readable or Bits, or Vectors/SVectors of these.
 """
 abstract type Readable end
+const MegaReadable = Union{Readable, RobotOS.AbstractMsg, RobotOS.AbstractTime}
+#const MegaReadable = Readable
 
-@generated function Base.read(io::IO, ::Type{T}) where {T<:Readable}
+
+@generated function Base.read(io::IO, ::Type{T}) where {T<:MegaReadable}
     statements = Expr[]
     for (name, E) in zip(fieldnames(T), T.types)
         push!(statements, :($name = read_field(io, $E)))
@@ -24,7 +29,7 @@ abstract type Readable end
 end
 
 """ Readable values can be read with Base.read(). """
-read_field(io::IO, ::Type{T}) where {T<:Readable} = read(io, T)
+read_field(io::IO, ::Type{T}) where {T<:MegaReadable} = read(io, T)
 
 const Bits = Union{Bool,Signed,Unsigned,Float32,Float64}
 

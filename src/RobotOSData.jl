@@ -2,11 +2,11 @@
 module RobotOSData
 
 using FileIO
+using UUIDs
 
 function __init__()
     # Register the format with FileIO when the module is loaded:
-    add_format(format"ROSBAG", "#ROSBAG V", ".bag")
-    add_loader(format"ROSBAG", :RobotOSData)
+    add_format(format"ROSBAG", "#ROSBAG V", ".bag", [:RobotOSData => UUID("ec174be4-a9f3-11e8-3a81-af157eca82e9")])
 end
 
 include("messages.jl")

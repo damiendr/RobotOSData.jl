@@ -1,7 +1,7 @@
 name = "RobotOSData"
 uuid = "ec174be4-a9f3-11e8-3a81-af157eca82e9"
 authors = ["Damien Drix <damien.drix@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 CodecBzip2 = "523fee87-0ab8-5b00-afb7-3ecf72e48cfd"
@@ -12,6 +12,7 @@ FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Tokenize = "0796e94c-ce3b-5d07-9a54-7f471281c624"
 TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
+UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
